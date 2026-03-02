@@ -8,8 +8,8 @@ const router = express.Router();
 
 const CONFIG = {
   baseUrl: "http://145.239.130.45/ints",
-  username: "teamlegend0097",
-  password: "kamixlegend",
+  username: "alihamza52",
+  password: "alihamza52",
   userAgent:
     "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/120 Safari/537.36"
 };
