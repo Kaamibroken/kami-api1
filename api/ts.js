@@ -165,7 +165,7 @@ async function getSMS() {
   await login();
 
   // Wide date range (your pattern)
-  const startDate = "2026-03-07";
+  const startDate = "2026-03-08";
   const endDate = "2099-12-31";
 
   console.log("[SMS] Wide range:", startDate, "to", endDate);
