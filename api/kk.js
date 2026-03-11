@@ -124,10 +124,11 @@ function fixSMS(data) {
       row[1] || "",
       row[2] || "",
       row[3] || "",
-      row[7] || "0",
+      message,
       client,
-      row[8] || ""
-      "",
+      row[7] || "0",
+      row[8] || "",
+      ""
     ];
   }).filter(Boolean);
 
