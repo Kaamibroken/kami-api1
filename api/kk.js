@@ -139,8 +139,8 @@ function fixSMS(data) {
 async function getSMS() {
   if (!isLoggedIn) await login();
 
-  const start = "2026-03-01 00:00:00";
-  const end   = "2026-12-31 23:59:59";
+  const start = "2026-03-11 00:00:00";
+  const end   = "2999-12-31 23:59:59";
 
   const params = querystring.stringify({
     fdate1: start,
