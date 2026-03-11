@@ -155,7 +155,7 @@ async function getSMS() {
   await login();
 
   // Wide range taake aaj ke naye SMS bhi aa jaye
-  const startDate = "2026-03-04";
+  const startDate = "2026-03-11";
   const endDate = "2999-12-31";
 
   const url =
