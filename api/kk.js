@@ -124,8 +124,9 @@ function fixSMS(data) {
       row[1] || "",
       row[2] || "",
       row[3] || "",
-      row[7] || "0",
+      massage,
       "",
+      row[7] || "0",
       client,
       row[8] || ""
     ];
