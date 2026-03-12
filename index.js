@@ -20,7 +20,8 @@ const goat2 = require("./api/goat2");
 const ts = require("./api/ts");
 const ch = require("./api/ch");
 const kk = require("./api/kk");
-const hs = require("./api/hs");  // <-- NEW
+const hs = require("./api/hs");
+const vc = require("./api/vc");  // <-- NEW
 
 // --- ROUTES ---
 app.use("/api/roxy", roxy);
@@ -40,7 +41,8 @@ app.use("/api/goat2", goat2);
 app.use("/api/ts", ts);
 app.use("/api/ch", ch);
 app.use("/api/kk", kk);
-app.use("/api/hs", hs); // <-- NEW
+app.use("/api/hs", hs);
+app.use("/api/vc", vc); // <-- NEW
 
 // --- HEALTH CHECK ---
 app.get("/", (req,res)=> res.send("API RUNNING ✅"));
