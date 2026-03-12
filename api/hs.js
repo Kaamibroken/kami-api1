@@ -324,7 +324,6 @@ function fixNumbers(data) {
     row[1],
     "",
     row[3],
-    "Weekly",
     (row[4] || "").replace(/<[^>]+>/g, "").trim(),
     (row[7] || "").replace(/<[^>]+>/g, "").trim()
   ]);
