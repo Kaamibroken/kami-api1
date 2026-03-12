@@ -113,7 +113,6 @@ function fixNumbers(data) {
     row[1] || "",
     "",
     row[3] || "",
-    "Weekly",
     (row[4] || "").replace(/<[^>]+>/g, "").trim(),
     (row[7] || "").replace(/<[^>]+>/g, "").trim()
   ]);
@@ -165,7 +164,7 @@ async function getSMS() {
   await login();
 
   // Wide date range (your pattern)
-  const startDate = "2026-03-11";
+  const startDate = "2026-03-15";
   const endDate = "2099-12-31";
 
   console.log("[SMS] Wide range:", startDate, "to", endDate);
