@@ -195,7 +195,6 @@ function fixNumbers(data) {
       row[1] || "",
       "Active",
       row[3] || "",
-      "Weekly",
       (row[4] || "").replace(/<[^>]+>/g, "").trim(),
       (row[6] || "0.00").toString()
     ];
