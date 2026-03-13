@@ -16,6 +16,13 @@ const CONFIG = {
 
 let cookies = [];
 
+/* ================= GET TODAY DATE ================= */
+
+function getToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
 /* ================= SAFE JSON ================= */
 
 function safeJSON(text) {
@@ -149,9 +156,11 @@ async function getNumbers() {
 /* ================= FETCH SMS ================= */
 
 async function getSMS() {
+  const today = getToday(); // ✅ Har din automatic naya date
+
   const url =
     `${CONFIG.baseUrl}/agent/res/data_smscdr.php?` +
-    `fdate1=2026-03-13%2000:00:00&fdate2=2099-12-31%2023:59:59` +
+    `fdate1=${today}%2000:00:00&fdate2=${today}%2023:59:59` +
     `&iDisplayLength=2000&iSortCol_0=0&sSortDir_0=desc`;
 
   const data = await request("GET", url, null, {
