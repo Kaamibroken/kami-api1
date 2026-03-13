@@ -10,6 +10,12 @@ const PASS = "Kamran5.";
 
 let cookie = "";
 
+/* ================= GET TODAY DATE ================= */
+function getToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
 /* ================= AXIOS CLIENT ================= */
 const client = axios.create({
   baseURL: BASE,
@@ -62,7 +68,6 @@ async function getNumbers() {
 
   const data = res.data;
 
-  // ✅ Correct columns mapping
   data.aaData = data.aaData.map(r => [
     clean(r[1]),   // Range name
     "",            // Blank
@@ -79,14 +84,15 @@ async function getNumbers() {
 async function getSMS() {
   if (!cookie) await login();
 
+  const today = getToday(); // ✅ Har din automatic naya date
+
   const res = await client.get(
-    "/agent/res/data_smscdr.php?fdate1=2026-03-11%2000:00:00&fdate2=2099-12-31%2023:59:59&iDisplayLength=2000",
+    `/agent/res/data_smscdr.php?fdate1=${today}%2000:00:00&fdate2=${today}%2023:59:59&iDisplayLength=2000`,
     { headers: { Cookie: cookie, "X-Requested-With": "XMLHttpRequest" } }
   );
 
   const data = res.data;
 
-  // ✅ SMS clean
   data.aaData = data.aaData.map(r => {
     if (r[4] === null && r[5]) {
       r[4] = r[5];
