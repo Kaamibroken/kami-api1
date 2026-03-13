@@ -16,6 +16,12 @@ const CONFIG = {
 
 let cookies = [];
 
+/* ================= GET TODAY DATE ================= */
+function getToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
 /* ================= SAFE JSON ================= */
 function safeJSON(text) {
   try {
@@ -153,14 +159,12 @@ async function getNumbers() {
 async function getSMS() {
   await login();
 
-  // Wide range taake aaj ke naye SMS bhi aa jaye
-  const startDate = "2026-03-04";
-  const endDate = "2999-12-31";
+  const today = getToday(); // ✅ Har din automatic naya date
 
   const url =
     `${CONFIG.baseUrl}/agent/res/data_smscdr.php?` +
-    `fdate1=${encodeURIComponent(startDate + " 00:00:00")}&` +
-    `fdate2=${encodeURIComponent(endDate + " 23:59:59")}&` +
+    `fdate1=${encodeURIComponent(today + " 00:00:00")}&` +
+    `fdate2=${encodeURIComponent(today + " 23:59:59")}&` +
     `frange=&fclient=&fnum=&fcli=&fgdate=&fgmonth=&fgrange=&fgclient=&fgnumber=&fgcli=&fg=0&` +
     `sEcho=2&iColumns=9&sColumns=%2C%2C%2C%2C%2C%2C%2C%2C&iDisplayStart=0&iDisplayLength=5000`;
 
@@ -168,8 +172,6 @@ async function getSMS() {
     Referer: `${CONFIG.baseUrl}/agent/SMSCDRReports`,
     "X-Requested-With": "XMLHttpRequest"
   });
-
-  console.log("[SMS RAW PREVIEW]", data.substring(0, 600)); // debug
 
   return fixSMS(safeJSON(data));
 }
