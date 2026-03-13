@@ -15,6 +15,12 @@ const CONFIG = {
 let cookies = [];
 let isLoggedIn = false;
 
+/* ================= GET TODAY DATE ================= */
+function getToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
 /* SAFE JSON */
 function safeJSON(text) {
   try {
@@ -29,12 +35,6 @@ function makeRequest(method, path, data = null, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
     let cleanPath = path.startsWith('/') ? path : '/' + path;
     const fullUrl = CONFIG.baseUrl + cleanPath;
-
-    if (fullUrl.includes('http:') && fullUrl.indexOf('http:') !== fullUrl.lastIndexOf('http:')) {
-      return reject(new Error("Invalid URL - double domain"));
-    }
-
-    console.log(`[REQ] ${method} ${fullUrl}`);
 
     const headers = {
       "User-Agent": CONFIG.userAgent,
@@ -103,10 +103,9 @@ async function login() {
   }
 
   isLoggedIn = true;
-  console.log("[LOGIN] Success");
 }
 
-/* FIX NUMBERS & SMS */
+/* FIX NUMBERS */
 function fixNumbers(data) {
   if (!data.aaData) return data;
   data.aaData = data.aaData.map(row => [
@@ -119,21 +118,14 @@ function fixNumbers(data) {
   return data;
 }
 
+/* FIX SMS */
 function fixSMS(data) {
   if (!data.aaData) return data;
   data.aaData = data.aaData
     .map(row => {
       let message = (row[5] || "").replace(/legendhacker/gi, "").trim();
       if (!message) return null;
-      return [
-        row[0] || "",
-        row[1] || "",
-        row[2] || "",
-        row[3] || "",
-        message,
-        "$",
-        row[7] || 0
-      ];
+      return [row[0] || "", row[1] || "", row[2] || "", row[3] || "", message, "$", row[7] || 0];
     })
     .filter(Boolean);
   return data;
@@ -144,14 +136,10 @@ async function getNumbers() {
   if (!isLoggedIn) await login();
 
   const params = querystring.stringify({
-    frange: "",
-    fclient: "",
-    sEcho: "2",
-    iDisplayStart: "0",
-    iDisplayLength: "-1"
+    frange: "", fclient: "", sEcho: "2", iDisplayStart: "0", iDisplayLength: "-1"
   });
 
-  let data = await makeRequest("GET", `/agent/res/data_smsnumbers.php?${params}`, null, {
+  const data = await makeRequest("GET", `/agent/res/data_smsnumbers.php?${params}`, null, {
     Referer: `${CONFIG.baseUrl}/agent/MySMSNumbers`,
     "X-Requested-With": "XMLHttpRequest"
   });
@@ -159,67 +147,40 @@ async function getNumbers() {
   return fixNumbers(safeJSON(data));
 }
 
-/* GET SMS - USING YOUR WIDE RANGE PATTERN */
+/* GET SMS */
 async function getSMS() {
   await login();
 
-  // Wide date range (your pattern)
-  const startDate = "2026-03-15";
-  const endDate = "2099-12-31";
-
-  console.log("[SMS] Wide range:", startDate, "to", endDate);
+  const today = getToday(); // ✅ Har din automatic naya date
 
   const params = [
-    `fdate1=${encodeURIComponent(startDate + " 00:00:00")}`,
-    `fdate2=${encodeURIComponent(endDate + " 23:59:59")}`,
-    `frange=`,
-    `fclient=`,
-    `fnum=`,
-    `fcli=`,
-    `fg=0`,
-    `iDisplayLength=2000`  // your suggested value
-  ].join('&');
+    `fdate1=${encodeURIComponent(today + " 00:00:00")}`,
+    `fdate2=${encodeURIComponent(today + " 23:59:59")}`,
+    `frange=`, `fclient=`, `fnum=`, `fcli=`, `fg=0`,
+    `iDisplayLength=2000`
+  ].join("&");
 
   const urlPath = `/agent/res/data_smscdr.php?${params}`;
 
-  console.log("[SMS] Full URL:", CONFIG.baseUrl + urlPath);
-
-  // Load parent page first
-  try {
-    await makeRequest("GET", "/agent/SMSCDRReports", null, {
-      Referer: `${CONFIG.baseUrl}/agent/`
-    });
-    console.log("[SMS] Loaded SMSCDRReports");
-  } catch (err) {
-    console.warn("[SMS] SMSCDRReports load failed:", err.message);
-  }
+  await makeRequest("GET", "/agent/SMSCDRReports", null, {
+    Referer: `${CONFIG.baseUrl}/agent/`
+  }).catch(() => {});
 
   let data = await makeRequest("GET", urlPath, null, {
     Referer: `${CONFIG.baseUrl}/agent/SMSCDRReports`,
-    "X-Requested-With": "XMLHttpRequest",
-    "Accept": "application/json, text/javascript, */*; q=0.01"
+    "X-Requested-With": "XMLHttpRequest"
   });
 
-  console.log("[SMS RAW PREVIEW]", data.substring(0, 1000));
-
-  // Retry if blocked
   if (data.includes("Direct Script Access") || data.includes("Please sign in") || data.includes("login")) {
-    console.log("[SMS] Blocked - retrying...");
     await login();
-    await makeRequest("GET", "/agent/SMSCDRReports");
+    await makeRequest("GET", "/agent/SMSCDRReports").catch(() => {});
     data = await makeRequest("GET", urlPath, null, {
       Referer: `${CONFIG.baseUrl}/agent/SMSCDRReports`,
       "X-Requested-With": "XMLHttpRequest"
     });
-    console.log("[SMS RETRY PREVIEW]", data.substring(0, 1000));
   }
 
-  const json = safeJSON(data);
-  const result = fixSMS(json);
-
-  console.log("[SMS] Final messages count:", result.aaData?.length || 0);
-
-  return result;
+  return fixSMS(safeJSON(data));
 }
 
 /* ROUTE */
@@ -230,10 +191,9 @@ router.get("/", async (req, res) => {
 
   try {
     if (type === "numbers") return res.json(await getNumbers());
-    if (type === "sms") return res.json(await getSMS());
+    if (type === "sms")     return res.json(await getSMS());
     res.json({ error: "Invalid type" });
   } catch (err) {
-    console.error("[ERROR]", err.message);
     res.json({ error: err.message || "Failed" });
   }
 });
