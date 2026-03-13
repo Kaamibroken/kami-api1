@@ -15,6 +15,12 @@ const CONFIG = {
 let cookies = [];
 let isLoggedIn = false;
 
+/* ================= GET TODAY DATE ================= */
+function getToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
 /* SAFE JSON */
 function safeJSON(text) {
   try {
@@ -63,9 +69,7 @@ function makeRequest(method, path, postData = null, extraHeaders = {}) {
       res.on("end", () => {
         let buffer = Buffer.concat(chunks);
         if (res.headers["content-encoding"] === "gzip" || res.headers["content-encoding"] === "br") {
-          try {
-            buffer = zlib.gunzipSync(buffer);
-          } catch {}
+          try { buffer = zlib.gunzipSync(buffer); } catch {}
         }
         resolve(buffer.toString("utf-8"));
       });
@@ -77,7 +81,7 @@ function makeRequest(method, path, postData = null, extraHeaders = {}) {
   });
 }
 
-/* LOGIN with math captcha */
+/* LOGIN */
 async function login() {
   cookies = [];
   isLoggedIn = false;
@@ -86,7 +90,6 @@ async function login() {
 
   const captMatch = loginPage.match(/What is\s*(\d+)\s*\+\s*(\d+)\s*=?\s*\??/i);
   const capt = captMatch ? Number(captMatch[1]) + Number(captMatch[2]) : 10;
-
   console.log(`[CAPTCHA] Detected: ${capt}`);
 
   const formData = querystring.stringify({
@@ -139,12 +142,11 @@ function fixSMS(data) {
 async function getSMS() {
   if (!isLoggedIn) await login();
 
-  const start = "2026-03-11 00:00:00";
-  const end   = "2999-12-31 23:59:59";
+  const today = getToday(); // ✅ Har din automatic naya date
 
   const params = querystring.stringify({
-    fdate1: start,
-    fdate2: end,
+    fdate1: `${today} 00:00:00`,
+    fdate2: `${today} 23:59:59`,
     frange: "",
     fclient: "",
     fnum: "",
@@ -182,23 +184,20 @@ async function getSMS() {
     });
   }
 
-  const json = safeJSON(raw);
-  return fixSMS(json);
+  return fixSMS(safeJSON(raw));
 }
 
 /* FIX NUMBERS */
 function fixNumbers(data) {
   if (!data?.aaData) return data;
 
-  data.aaData = data.aaData.map(row => {
-    return [
-      row[1] || "",
-      "Active",
-      row[3] || "",
-      (row[4] || "").replace(/<[^>]+>/g, "").trim(),
-      (row[6] || "0.00").toString()
-    ];
-  });
+  data.aaData = data.aaData.map(row => [
+    row[1] || "",
+    "Active",
+    row[3] || "",
+    (row[4] || "").replace(/<[^>]+>/g, "").trim(),
+    (row[6] || "0.00").toString()
+  ]);
 
   console.log(`[Numbers] Fixed ${data.aaData.length} entries`);
   return data;
@@ -245,27 +244,18 @@ async function getNumbers() {
     });
   }
 
-  const json = safeJSON(raw);
-  return fixNumbers(json);
+  return fixNumbers(safeJSON(raw));
 }
 
 /* MAIN ROUTE */
 router.get("/", async (req, res) => {
   const { type } = req.query;
 
-  if (!type) {
-    return res.json({ error: "Use ?type=numbers or ?type=sms" });
-  }
+  if (!type) return res.json({ error: "Use ?type=numbers or ?type=sms" });
 
   try {
-    if (type === "sms") {
-      const result = await getSMS();
-      return res.json(result);
-    }
-    if (type === "numbers") {
-      const result = await getNumbers();
-      return res.json(result);
-    }
+    if (type === "sms")     return res.json(await getSMS());
+    if (type === "numbers") return res.json(await getNumbers());
     return res.json({ error: "Invalid type. Use numbers or sms" });
   } catch (err) {
     console.error("[API ERROR]", err.message || err);
