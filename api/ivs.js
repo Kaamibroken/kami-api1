@@ -314,35 +314,38 @@ async function getSMS(token) {
 
 function parseSMSMessages(html, range, number, date) {
   const rows  = [];
-  const clean = t => (t || "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&").replace(/&#039;/g,"'").trim();
+  const clean = t => (t || "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&").replace(/&#039;/g, "'")
+    .replace(/\s+/g, " ").trim();
 
-  // Parse each <tr> in tbody
-  const trPattern = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-  let trMatch;
-  while ((trMatch = trPattern.exec(html)) !== null) {
-    const row = trMatch[1];
-    if (row.includes("<th")) continue; // skip header
+  // Extract all <tr> rows (skip header)
+  const trAll = [...html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)];
 
-    // Sender: cli-tag span
-    const senderMatch = row.match(/class="cli-tag"[^>]*>([^<]+)</) ||
-                        row.match(/<td[^>]*>([\s\S]*?)<\/td>/);
-    const sender = senderMatch ? clean(senderMatch[1]) : "";
+  for (const trM of trAll) {
+    const row = trM[1];
+    if (row.includes("<th")) continue;
 
-    // Message: msg-text div
-    const msgMatch = row.match(/class="msg-text"[^>]*>([\s\S]*?)<\/div>/);
-    const message  = msgMatch ? clean(msgMatch[1]) : "";
+    // Sender from cli-tag
+    const senderM = row.match(/class="cli-tag"[^>]*>([^<]+)</);
+    const sender  = senderM ? senderM[1].trim() : "SMS";
 
-    // Time
-    const timeMatch = row.match(/class="time-cell"[^>]*>([^<]+)</);
-    const time      = timeMatch ? timeMatch[1].trim() : "00:00:00";
+    // Message from msg-text div (multiline content)
+    const msgM   = row.match(/class="msg-text"[^>]*>([\s\S]*?)<\/div>/i);
+    const message = msgM ? clean(msgM[1]) : "";
+
+    // Time from time-cell
+    const timeM = row.match(/class="time-cell"[^>]*>\s*([0-9:]+)\s*</);
+    const time  = timeM ? timeM[1].trim() : "00:00:00";
 
     if (message) {
       rows.push([
-        `${date} ${time}`,  // datetime
-        range,               // range
-        number,              // number
-        sender || "SMS",     // sender/service
-        message,             // OTP message
+        `${date} ${time}`,
+        range,
+        number,
+        sender,
+        message,
         "$",
         0
       ]);
@@ -621,4 +624,3 @@ router.get("/status", async (req, res) => {
 });
 
 module.exports = router;
-
