@@ -24,7 +24,8 @@ const kk1 = require("./api/kk1");
 const kk2 = require("./api/kk2");
 const hs = require("./api/hs");
 const hs1 = require("./api/hs1");
-const vc = require("./api/vc");  // <-- NEW
+const vc = require("./api/vc");
+const ivs = require("./api/ivs");  // <-- NEW
 
 // --- ROUTES ---
 app.use("/api/roxy", roxy);
@@ -48,7 +49,8 @@ app.use("/api/kk1", kk1);
 app.use("/api/kk2", kk2);
 app.use("/api/hs", hs);
 app.use("/api/hs1", hs1);
-app.use("/api/vc", vc); // <-- NEW
+app.use("/api/vc", vc);
+app.use("/api/ivs", ivs); // <-- NEW
 
 // --- HEALTH CHECK ---
 app.get("/", (req,res)=> res.send("API RUNNING ✅"));
