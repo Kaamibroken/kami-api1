@@ -318,39 +318,21 @@ function parseSMSMessages(html, range, number, date) {
     .replace(/<[^>]+>/g, "")
     .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
     .replace(/&amp;/g, "&").replace(/&#039;/g, "'")
-    .replace(/\s+/g, " ").trim();
+    .replace(/\r\n|\r|\n/g, " ").replace(/\s+/g, " ").trim();
 
-  // Extract all <tr> rows (skip header)
-  const trAll = [...html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)];
+  const messages = [...html.matchAll(/class="msg-text"[^>]*>([\s\S]*?)<\/div>/gi)].map(m => clean(m[1]));
+  const senders  = [...html.matchAll(/class="cli-tag"[^>]*>([^<]+)</gi)].map(m => m[1].trim());
+  const times    = [...html.matchAll(/class="time-cell"[^>]*>\s*([0-9:]+)\s*</gi)].map(m => m[1].trim());
 
-  for (const trM of trAll) {
-    const row = trM[1];
-    if (row.includes("<th")) continue;
-
-    // Sender from cli-tag
-    const senderM = row.match(/class="cli-tag"[^>]*>([^<]+)</);
-    const sender  = senderM ? senderM[1].trim() : "SMS";
-
-    // Message from msg-text div (multiline content)
-    const msgM   = row.match(/class="msg-text"[^>]*>([\s\S]*?)<\/div>/i);
-    const message = msgM ? clean(msgM[1]) : "";
-
-    // Time from time-cell
-    const timeM = row.match(/class="time-cell"[^>]*>\s*([0-9:]+)\s*</);
-    const time  = timeM ? timeM[1].trim() : "00:00:00";
-
-    if (message) {
-      rows.push([
-        `${date} ${time}`,
-        range,
-        number,
-        sender,
-        message,
-        "$",
-        0
-      ]);
-    }
-  }
+  messages.forEach((msg, i) => {
+    if (!msg) return;
+    rows.push([
+      `${date} ${times[i] || "00:00:00"}`,
+      range, number,
+      senders[i] || "SMS",
+      msg, "$", 0
+    ]);
+  });
 
   return rows;
 }
